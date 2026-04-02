@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kasir Travel</title>
+
+<style>
+body{margin:0;font-family:Arial;background:#0f172a;color:#fff}
+.header{padding:14px;text-align:center;background:#020617;font-weight:bold}
+.wrap{max-width:420px;margin:auto;padding:12px}
+.card{background:#1e293b;padding:12px;border-radius:10px;margin-bottom:10px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{display:flex;flex-direction:column}
+label{font-size:12px;margin-bottom:4px;color:#cbd5e1}
+input{padding:10px;border:none;border-radius:6px;font-size:14px}
+input:focus{outline:none;box-shadow:0 0 0 2px #22c55e}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+button{padding:10px;border:none;border-radius:8px;font-weight:bold;font-size:13px}
+.result{background:#000;color:#00ff9c;padding:12px;font-family:monospace;white-space:pre-line;font-size:12px;border-radius:8px}
+</style>
+</head>
+
+<body>
+
+<div class="header">Kasir Travel</div>
+
+<div class="wrap">
+
+<div class="card">
+<div class="grid">
+
+<div class="field">
+<label>Penumpang Cash</label>
+<input id="cash" type="number">
+</div>
+
+<div class="field">
+<label>Penumpang QR</label>
+<input id="qr" type="number">
+</div>
+
+<div class="field">
+<label>Carter Cash</label>
+<input id="carterCash" type="number">
+</div>
+
+<div class="field">
+<label>Carter QR</label>
+<input id="carterQR" type="number">
+</div>
+
+</div>
+</div>
+
+<div class="card">
+<div class="btns">
+<button onclick="hitung()">Hitung</button>
+<button onclick="copy()">Copy</button>
+<button onclick="wa()">WhatsApp</button>
+<button onclick="struk()">Struk</button>
+<button onclick="laporan()">Laporan</button>
+<button onclick="reset()">Reset</button>
+<button onclick="resetLap()">Reset Laporan</button>
+</div>
+</div>
+
+<div class="card">
+<div id="hasil" class="result"></div>
+</div>
+
+</div>
+
+<script>
+
+/* TANGGAL */
+function tgl(){
+let d=new Date();
+return ("0"+d.getDate()).slice(-2)+"/"+("0"+(d.getMonth()+1)).slice(-2)+"/"+d.getFullYear();
+}
+
+let today=tgl();
+
+if(localStorage.getItem("tgl")!=today){
+localStorage.setItem("tgl",today);
+localStorage.setItem("nota",1);
+}
+
+let nota=localStorage.getItem("nota")||1;
+
+/* FORMAT */
+function rp(n){return n.toLocaleString("id-ID")}
+
+/* GAJI DRIVER */
+function gaji(p){
+if(p==5)return 160000;
+if(p==6||p==7)return 200000;
+if(p==8)return 220000;
+if(p==9)return 240000;
+if(p==10)return 250000;
+if(p==11)return 270000;
+if(p>=12)return 300000;
+return 0;
+}
+
+/* HITUNG */
+function hitung(){
+
+let tarif=180000, bbm=470000;
+
+let c=+cash.value||0;
+let q=+qr.value||0;
+let cc=+carterCash.value||0;
+
+let hc=c*tarif;
+let hq=q*tarif;
+
+let masuk=hc+cc;
+let pen=c+q;
+let gj=gaji(pen);
+let sisa=masuk-bbm;
+
+let rit=today+"/"+("000"+nota).slice(-3);
+
+let t="";
+t+="====================\n";
+t+="Ritase "+rit+"\n";
+t+="Penumpang "+pen+"\n";
+t+="--------------------\n";
+
+if(c) t+="Cash "+c+" x 180.000 = "+rp(hc)+"\n";
+if(q) t+="QR "+q+" x 180.000 = "+rp(hq)+"\n";
+if(cc) t+="Carter Cash = "+rp(cc)+"\n";
+
+t+="--------------------\n";
+t+="BBM "+rp(bbm)+"\n";
+
+if(gj) t+="Gaji Driver "+rp(gj)+"\n";
+
+t+="--------------------\n";
+t+="Sisa Uang Jalan "+rp(sisa)+"\n";
+t+="====================";
+
+hasil.innerText=t;
+
+/* SIMPAN LAPORAN */
+let data=JSON.parse(localStorage.getItem("lap")||"[]");
+
+data.push({ritase:rit,penumpang:pen,gaji:gj});
+
+localStorage.setItem("lap",JSON.stringify(data));
+
+nota++;
+localStorage.setItem("nota",nota);
+
+}
+
+/* LAPORAN (APP STYLE) */
+function laporan(){
+
+let data=JSON.parse(localStorage.getItem("lap")||"[]");
+
+let total=0, rows="";
+
+data.forEach(d=>{
+total+=d.gaji;
+rows+=`
+<tr>
+<td>${d.ritase}</td>
+<td>${d.penumpang}</td>
+<td>${rp(d.gaji)}</td>
+</tr>`;
+});
+
+let html=`
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+
+body{
+margin:0;
+background:#0f172a;
+color:white;
+font-family:Arial;
+display:flex;
+flex-direction:column;
+height:100vh;
+}
+
+.header{
+position:sticky;
+top:0;
+background:#020617;
+padding:16px;
+text-align:center;
+font-weight:bold;
+}
+
+.container{
+flex:1;
+overflow:auto;
+padding:12px;
+}
+
+.card{
+background:#1e293b;
+padding:12px;
+border-radius:10px;
+margin-bottom:10px;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+th{
+position:sticky;
+top:0;
+background:#334155;
+padding:10px;
+}
+
+td{
+padding:8px;
+text-align:center;
+border-bottom:1px solid #334155;
+}
+
+.total{
+background:#111827;
+font-weight:bold;
+}
+
+.footer{
+position:sticky;
+bottom:0;
+background:#020617;
+padding:10px;
+}
+
+button{
+width:100%;
+padding:12px;
+border:none;
+border-radius:8px;
+background:#2563eb;
+color:white;
+font-weight:bold;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="header">Laporan Gaji Driver</div>
+
+<div class="container">
+
+<div class="card">Tanggal : ${today}</div>
+
+<div class="card">
+
+<table>
+<tr>
+<th>Ritase</th>
+<th>Penumpang</th>
+<th>Gaji</th>
+</tr>
+
+${rows}
+
+<tr class="total">
+<td>TOTAL</td>
+<td>-</td>
+<td>${rp(total)}</td>
+</tr>
+
+</table>
+
+</div>
+
+</div>
+
+<div class="footer">
+<button onclick="window.close()">Kembali</button>
+</div>
+
+</body>
+</html>
+`;
+
+let w=window.open();
+w.document.write(html);
+
+}
+
+/* STRUK (TANPA RITASE & GAJI) */
+function struk(){
+
+let text=hasil.innerText.split("\n").filter(x=>
+!x.includes("Ritase") &&
+!x.includes("Gaji Driver")
+).join("\n");
+
+let canvas=document.createElement("canvas");
+let ctx=canvas.getContext("2d");
+
+let w=300, lh=20;
+
+canvas.width=w;
+canvas.height=lh*text.split("\n").length+20;
+
+ctx.fillStyle="#fff";
+ctx.fillRect(0,0,w,canvas.height);
+
+ctx.fillStyle="#000";
+ctx.font="14px monospace";
+
+let y=15;
+
+text.split("\n").forEach(l=>{
+ctx.fillText(l,5,y);
+y+=lh;
+});
+
+canvas.toBlob(async b=>{
+let f=new File([b],"struk.png",{type:"image/png"});
+await navigator.share({files:[f]});
+});
+
+}
+
+/* UTIL */
+function copy(){navigator.clipboard.writeText(hasil.innerText)}
+function wa(){location.href="https://wa.me/?text="+encodeURIComponent(hasil.innerText)}
+function reset(){location.reload()}
+function resetLap(){
+localStorage.removeItem("lap");
+localStorage.setItem("nota",1);
+alert("Laporan direset");
+}
+
+</script>
+
+</body>
+  </html>
